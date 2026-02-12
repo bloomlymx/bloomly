@@ -2,23 +2,20 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  // 1. Crear Productos del Catálogo
-  // Nota: Usamos 'create' simple. Si corres esto muchas veces se duplicarán los ramos, 
-  // pero para la primera vez está bien.
+  // 1. Crear Productos
   const ramoRosas = await prisma.product.create({
     data: {
       name: 'Ramo Eternidad (24 Rosas)',
       description: 'Rosas rojas de invernadero premium',
       price: 850.00,
-      occasion: 'love', // Usamos 'occasion' (el campo correcto)
-      imageUrl: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?auto=format&fit=crop&q=80&w=800' // Usamos 'imageUrl' (el campo correcto)
+      occasion: 'love', 
+      imageUrl: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?auto=format&fit=crop&q=80&w=800'
     }
   })
 
-  // 2. Crear Clientes
-  // CORRECCIÓN: Usamos 'phone' en el 'where' porque tu base de datos requiere un campo único
+  // 2. Crear Clientes (Buscando por teléfono)
   const cliente = await prisma.customer.upsert({
-    where: { phone: '5551234567' }, // 👈 CAMBIO AQUÍ (Antes era email)
+    where: { phone: '5551234567' },
     update: {},
     create: {
       name: 'Ana García',
@@ -27,7 +24,7 @@ async function main() {
     }
   })
 
-  // 3. Crear Lotes de Flores (Aquí simulamos la MERMA)
+  // 3. Crear Lotes de Flores
   console.log('🌱 Plantando flores frescas...')
   
   // Lote Fresco
@@ -35,22 +32,22 @@ async function main() {
     data: {
       flowerType: 'Girasol',
       quantity: 50,
-      arrivalDate: new Date(),
-      expiryDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Caduca en 7 días
+      // arrivalDate: ...  <-- BORRAMOS ESTA LÍNEA (Usará createdAt automático)
+      expiryDate: new Date(new Date().setDate(new Date().getDate() + 7)), 
       status: 'FRESH',
       purchasePrice: 15.00
     }
   })
 
-  console.log('🥀 Plantando flores podridas (simulación de riesgo)...')
+  console.log('🥀 Plantando flores podridas...')
 
-  // Lote EN RIESGO (Esto debería activar tu alerta roja)
+  // Lote EN RIESGO
   await prisma.flowerBatch.create({
     data: {
       flowerType: 'Rosa Roja',
-      quantity: 150, // ¡150 rosas en riesgo!
-      arrivalDate: new Date(),
-      expiryDate: new Date(new Date().setDate(new Date().getDate() + 1)), // Caduca MAÑANA
+      quantity: 150,
+      // arrivalDate: ... <-- BORRAMOS ESTA LÍNEA TAMBIÉN
+      expiryDate: new Date(new Date().setDate(new Date().getDate() + 1)), 
       status: 'RISK',
       purchasePrice: 12.50
     }

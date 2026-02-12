@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. EL PRODUCTO (Catálogo para E-commerce)
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String   // Ej: "Ramo Buchón 50 Rosas"
+  description String?  // Descripción detallada
+  price       Float
+  imageUrl    String?  // URL de la foto
+  category    String?  // "Arreglo", "Ramo"
+  createdAt   DateTime @default(now()) // Para ordenar por "Nuevos"
+
+  discountPrice Float?     // Precio rebajado (Opcional)
+  discountStart DateTime?  // Cuándo empieza la oferta
+  discountEnd   DateTime?  // Cuándo termina la oferta
+
+  // 👇 NUEVO: Categoría / Ocasión
+  occasion      String?  // Ej: "love", "birthday", "anniversary", "condolences"
+   
+  // Relaciones
+  batches     FlowerBatch[] // Si asignamos lotes a productos
+  items       OrderItem[]   // Relación con los pedidos
+}
+
+// 2. EL LOTE DE FLORES (Control de Merma e Inventario)
+model FlowerBatch {
+  id            Int      @id @default(autoincrement())
+  
+  flowerType    String   // Ej: "Rosa Roja", "Girasol"
+  quantity      Int      // Stock actual (disminuye con el uso)
+  
+  // 👇 NUEVOS CAMPOS AGREGADOS PARA EL INVENTARIO INTELIGENTE
+  originalQty   Int      @default(0) // Stock inicial (para calcular % de merma)
+  purchasePrice Float    @default(0) // Costo del lote
+  purchaseDate  DateTime @default(now()) // Fecha de entrada
+  
+  expiryDate    DateTime? // Opcional: El sistema calcula frescura por días
+  status        String   @default("FRESH") // FRESH, RISK, WASTE
+  
+  // Relaciones (Opcionales por si quieres ligarlo a un producto específico)
+  productId     Int?      
+  product       Product? @relation(fields: [productId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+}
+
+// 3. EL CLIENTE (CRM)
+model Customer {
+  id     Int     @id @default(autoincrement())
+  name   String
+  phone  String  @unique 
+  email  String?
+  orders Order[]
+}
+
+// 4. EL PEDIDO (Ventas y Logística)
+model Order {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  deliveryDate  DateTime
+  status        String   @default("PENDING")
+  total         Float
+   
+  // DATOS DE LOGÍSTICA
+  address       String?  // Dirección de entrega
+  dedication    String?  // Mensaje de la tarjeta
+  recipientName String?  // Quién recibe (ej: "Mamá")
+
+  customerId    Int
+  customer      Customer @relation(fields: [customerId], references: [id])
+   
+  items         OrderItem[]
+}
+
+// Tabla intermedia (Detalle del pedido)
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+  price     Float
+   
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+// 👇 NUEVO MODELO: Configuración de la Tienda
+model StoreSettings {
+  id          Int     @id @default(autoincrement())
+  shopName    String  @default("Mi Florería")
+  updatedAt   DateTime @updatedAt
+}

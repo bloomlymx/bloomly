@@ -30,7 +30,8 @@ export async function deleteProduct(productId: number) {
     await prisma.product.delete({
       where: { id: productId }
     });
-    revalidatePath("/products");
+    revalidatePath("dashboard/products");
+    revalidatePath("/shop");
   } catch (error) {
     console.error("Error borrando producto", error);
   }

@@ -3,20 +3,22 @@ const prisma = new PrismaClient()
 
 async function main() {
   // 1. Crear Productos del Catálogo
+  // Nota: Usamos 'create' simple. Si corres esto muchas veces se duplicarán los ramos, 
+  // pero para la primera vez está bien.
   const ramoRosas = await prisma.product.create({
     data: {
       name: 'Ramo Eternidad (24 Rosas)',
       description: 'Rosas rojas de invernadero premium',
       price: 850.00,
-      occasion: 'love', // ✅ CAMBIO: Usamos 'occasion' en lugar de 'category'
-      imageUrl: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?auto=format&fit=crop&q=80&w=800' // ✅ CAMBIO: 'imageUrl' y una URL real
+      occasion: 'love', // Usamos 'occasion' (el campo correcto)
+      imageUrl: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?auto=format&fit=crop&q=80&w=800' // Usamos 'imageUrl' (el campo correcto)
     }
   })
 
   // 2. Crear Clientes
-  // Usamos upsert para no duplicar si ya existe
+  // CORRECCIÓN: Usamos 'phone' en el 'where' porque tu base de datos requiere un campo único
   const cliente = await prisma.customer.upsert({
-    where: { email: 'ana@gmail.com' },
+    where: { phone: '5551234567' }, // 👈 CAMBIO AQUÍ (Antes era email)
     update: {},
     create: {
       name: 'Ana García',
@@ -36,7 +38,7 @@ async function main() {
       arrivalDate: new Date(),
       expiryDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Caduca en 7 días
       status: 'FRESH',
-      purchasePrice: 15.00 // Agregamos precio si es requerido, si no, lo ignora
+      purchasePrice: 15.00
     }
   })
 

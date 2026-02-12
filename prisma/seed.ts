@@ -8,14 +8,17 @@ async function main() {
       name: 'Ramo Eternidad (24 Rosas)',
       description: 'Rosas rojas de invernadero premium',
       price: 850.00,
-      category: 'Ramo',
-      image: '/roses.jpg'
+      occasion: 'love', // ✅ CAMBIO: Usamos 'occasion' en lugar de 'category'
+      imageUrl: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?auto=format&fit=crop&q=80&w=800' // ✅ CAMBIO: 'imageUrl' y una URL real
     }
   })
 
   // 2. Crear Clientes
-  const cliente = await prisma.customer.create({
-    data: {
+  // Usamos upsert para no duplicar si ya existe
+  const cliente = await prisma.customer.upsert({
+    where: { email: 'ana@gmail.com' },
+    update: {},
+    create: {
       name: 'Ana García',
       phone: '5551234567',
       email: 'ana@gmail.com'
@@ -32,7 +35,8 @@ async function main() {
       quantity: 50,
       arrivalDate: new Date(),
       expiryDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Caduca en 7 días
-      status: 'FRESH'
+      status: 'FRESH',
+      purchasePrice: 15.00 // Agregamos precio si es requerido, si no, lo ignora
     }
   })
 
@@ -45,7 +49,8 @@ async function main() {
       quantity: 150, // ¡150 rosas en riesgo!
       arrivalDate: new Date(),
       expiryDate: new Date(new Date().setDate(new Date().getDate() + 1)), // Caduca MAÑANA
-      status: 'RISK'
+      status: 'RISK',
+      purchasePrice: 12.50
     }
   })
 

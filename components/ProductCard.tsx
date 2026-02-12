@@ -1,8 +1,7 @@
 "use client";
 
 import { Product } from "@prisma/client";
-import Link from "next/link"; // 👈 Importante: Importamos Link
-import { deleteProduct } from "@/app/actions/product"; // Si tenías acción de borrar
+import Link from "next/link"; 
 
 interface Props {
   product: Product;
@@ -15,6 +14,7 @@ export default function ProductCard({ product }: Props) {
       
       {/* Imagen del Producto */}
       <div className="relative h-48 bg-gray-50 overflow-hidden">
+        {/* Nota: Si puedes, usa <Image> de next/image aquí para mejor rendimiento, pero <img> funciona bien */}
         <img 
           src={product.imageUrl || "/placeholder.jpg"} 
           alt={product.name}
@@ -34,8 +34,7 @@ export default function ProductCard({ product }: Props) {
             {product.description || "Incluye tarjeta y moño."}
         </p>
 
-        {/* 👇 AQUÍ ESTÁ EL CAMBIO IMPORTANTE 👇 */}
-        {/* En lugar de <button>, usamos <Link> que lleva a la página de edición */}
+        {/* Botón de acción */}
         <div className="mt-auto pt-4 flex gap-2">
             <Link 
                 href={`/dashboard/products/${product.id}`} 

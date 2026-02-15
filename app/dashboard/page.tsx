@@ -1,6 +1,8 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma"; 
 import WasteChart from "@/components/WasteChart"; 
+// 👇 Importamos el componente Cliente que acabas de crear en el Paso 2
+import TestUberButton from "@/components/TestUberButton"; 
 
 export default async function DashboardPage() {
   
@@ -65,7 +67,6 @@ export default async function DashboardPage() {
         
         {/* Izquierda: Saludo Dinámico */}
         <div>
-          {/* 👇 AQUÍ ESTÁ EL CAMBIO: Usamos {shopName} */}
           <h1 className="text-3xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
             Hola, {shopName} 🌿
           </h1>
@@ -75,10 +76,13 @@ export default async function DashboardPage() {
         </div>
 
         {/* Derecha: Acciones y Herramientas */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
             
+            {/* 🧪 AHORA ES SIMPLEMENTE EL COMPONENTE (MUESTRA ALERTAS) */}
+            <TestUberButton />
+
             {/* Indicador de Tienda Activa */}
-            <div className="hidden md:flex bg-white border border-green-100 px-4 py-2 rounded-full items-center gap-2 shadow-sm mr-2">
+            <div className="hidden md:flex bg-white border border-green-100 px-4 py-2.5 rounded-xl items-center gap-2 shadow-sm">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>

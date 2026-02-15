@@ -29,8 +29,8 @@ export async function createPublicOrder(formData: FormData) {
     });
   }
 
-  // 2. Crear el Pedido
-  await prisma.order.create({
+  // 👇 2. CAMBIO AQUÍ: Guardamos el pedido en la variable "newOrder" para saber su ID
+  const newOrder = await prisma.order.create({
     data: {
       total: price,
       status: "PENDING",
@@ -49,10 +49,11 @@ export async function createPublicOrder(formData: FormData) {
     }
   });
 
-  // 3. Notificar al sistema
+  // 3. Notificar al sistema para que refresque las pantallas
   revalidatePath("/");
+  revalidatePath("/shop");
   revalidatePath("/orders");
 
-// 4. CAMBIO AQUÍ: Redirigir a la página de éxito dedicada
-  redirect("/shop/success");
+  // 👇 4. CAMBIO AQUÍ: Redirigimos al cliente a su página de éxito personalizada con su folio exacto
+  redirect(`/shop/success/${newOrder.id}`);
 }

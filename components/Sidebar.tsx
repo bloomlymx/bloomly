@@ -10,6 +10,7 @@ export default function Sidebar() {
   const menuItems = [
     { name: "Dashboard", path: "/dashboard", icon: "📊" },
     { name: "Pedidos", path: "/dashboard/orders", icon: "🛍️" },
+    { name: "Radar de Ventas", path: "/dashboard/opportunities", icon: "🎯" }, // 👇 ¡AQUÍ ESTÁ EL NUEVO BOTÓN!
     { name: "Inventario", path: "/dashboard/inventory", icon: "🌹" },
     { name: "Catálogo", path: "/dashboard/products", icon: "📸" },
     { name: "Clientes", path: "/dashboard/customers", icon: "👥" },

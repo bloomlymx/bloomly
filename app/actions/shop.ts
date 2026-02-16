@@ -18,6 +18,9 @@ export async function createPublicOrder(formData: FormData) {
   const dedication = formData.get("dedication") as string;
   const deliveryDateStr = formData.get("deliveryDate") as string; // YYYY-MM-DD
 
+  // 👇 NUEVO (Paso 1): Atrapamos la respuesta del cliente sobre la ocasión
+  const orderOccasion = formData.get("orderOccasion") as string;
+
   // 1. Buscar o Crear Cliente
   let customer = await prisma.customer.findFirst({
     where: { phone: clientPhone }
@@ -29,7 +32,7 @@ export async function createPublicOrder(formData: FormData) {
     });
   }
 
-  // 👇 2. CAMBIO AQUÍ: Guardamos el pedido en la variable "newOrder" para saber su ID
+  // 2. Guardamos el pedido en la variable "newOrder" para saber su ID
   const newOrder = await prisma.order.create({
     data: {
       total: price,
@@ -38,6 +41,7 @@ export async function createPublicOrder(formData: FormData) {
       address: address,
       dedication: dedication,
       recipientName: recipientName,
+      occasion: orderOccasion, // 👇 NUEVO (Paso 2): Guardamos el dato de oro en la base de datos
       customerId: customer.id,
       items: {
         create: {
@@ -54,6 +58,6 @@ export async function createPublicOrder(formData: FormData) {
   revalidatePath("/shop");
   revalidatePath("/orders");
 
-  // 👇 4. CAMBIO AQUÍ: Redirigimos al cliente a su página de éxito personalizada con su folio exacto
+  // 4. Redirigimos al cliente a su página de éxito personalizada con su folio exacto
   redirect(`/shop/success/${newOrder.id}`);
 }

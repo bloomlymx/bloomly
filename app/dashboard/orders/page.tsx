@@ -2,6 +2,9 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import OrderBoard from "@/components/OrderBoard"; 
 
+// 👇 ESTA ES LA LÍNEA MÁGICA QUE APAGA EL CACHÉ Y HACE EL TABLERO EN VIVO 👇
+export const dynamic = "force-dynamic";
+
 export default async function OrdersPage() {
   
   // 1. Traemos los PEDIDOS (con sus relaciones)

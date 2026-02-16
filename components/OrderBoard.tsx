@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { updateOrderStatus, deleteOrder } from "@/app/actions/orders";
 import CreateOrderBtn from "./CreateOrderBtn";
 
@@ -13,6 +14,7 @@ interface Order {
   address?: string | null;
   dedication?: string | null;
   recipientName?: string | null;
+  deliveryDate: Date | string; // 👇 Agregamos esto para leer la fecha
 }
 
 interface Product {
@@ -23,24 +25,102 @@ interface Product {
 
 export default function OrderBoard({ orders, products }: { orders: Order[], products: Product[] }) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
-  const pending = orders.filter((o) => o.status === "PENDING");
-  const designing = orders.filter((o) => o.status === "DESIGNING");
-  const completedOrRoute = orders.filter((o) => o.status === "IN_ROUTE" || o.status === "DELIVERED");
+  // 👇 1. ESTADO DE LA FECHA (YYYY-MM-DD)
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  
+  const router = useRouter();
+
+  // 2. CONFIGURAMOS "HOY" AL ENTRAR AL TABLERO
+  useEffect(() => {
+    const today = new Date();
+    // Ajuste para la zona horaria local
+    const offset = today.getTimezoneOffset();
+    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+    setSelectedDate(localToday.toISOString().split('T')[0]);
+  }, []);
+
+  // 3. FUNCIONES PARA MOVER DÍAS RÁPIDAMENTE
+  const changeDays = (days: number) => {
+    if(!selectedDate) return;
+    const current = new Date(selectedDate);
+    // Para evitar problemas de zona horaria al sumar días
+    current.setUTCHours(12); 
+    current.setDate(current.getDate() + days);
+    setSelectedDate(current.toISOString().split('T')[0]);
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+  
+  // 👇 4. EL FILTRO MÁGICO: Solo dejamos pasar las órdenes del día seleccionado
+  const dailyOrders = orders.filter((o) => {
+    if (!selectedDate) return false;
+    // Cortamos la fecha de la base de datos para que solo sea YYYY-MM-DD
+    const orderDateStr = new Date(o.deliveryDate).toISOString().split('T')[0];
+    return orderDateStr === selectedDate;
+  });
+
+  // Ahora las columnas se alimentan de "dailyOrders" y no de "orders"
+  const pending = dailyOrders.filter((o) => o.status === "PENDING");
+  const designing = dailyOrders.filter((o) => o.status === "DESIGNING");
+  const completedOrRoute = dailyOrders.filter((o) => o.status === "IN_ROUTE" || o.status === "DELIVERED");
 
   return (
-    <div className="mt-8">
-      <div className="mb-6 flex justify-end">
-        <CreateOrderBtn products={products} />
+    <div className="mt-4">
+      
+      {/* BARRA DE HERRAMIENTAS Y FECHA */}
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        
+        {/* NAVEGADOR DE FECHAS */}
+        <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
+            <button 
+                onClick={() => changeDays(-1)} 
+                className="px-4 py-2 hover:bg-white rounded-lg text-gray-500 font-black transition-all shadow-sm hover:text-bloomly-olive"
+            >
+                ← Ayer
+            </button>
+            <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-4 py-2 font-black text-gray-800 outline-none cursor-pointer bg-transparent text-center"
+            />
+            <button 
+                onClick={() => changeDays(1)} 
+                className="px-4 py-2 hover:bg-white rounded-lg text-gray-500 font-black transition-all shadow-sm hover:text-bloomly-olive"
+            >
+                Mañana →
+            </button>
+        </div>
+
+        {/* BOTONES DE ACCIÓN */}
+        <div className="flex gap-3 w-full md:w-auto">
+            <button 
+            onClick={handleRefresh}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+            >
+            <span className={isRefreshing ? "animate-spin inline-block" : "inline-block"}>🔄</span>
+            </button>
+            <div className="flex-1 md:flex-none">
+                <CreateOrderBtn products={products} />
+            </div>
+        </div>
       </div>
 
+      {/* COLUMNAS DEL KANBAN */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[600px]">
         {/* COLUMNA 1: POR HACER */}
         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex flex-col">
           <h3 className="font-bold text-gray-500 mb-4 flex items-center gap-2">
             📋 Por Aceptar <span className="bg-gray-200 text-xs px-2 py-1 rounded-full">{pending.length}</span>
           </h3>
-          <div className="space-y-3 overflow-y-auto flex-1">
+          <div className="space-y-3 overflow-y-auto flex-1 pb-10">
+            {pending.length === 0 && <p className="text-center text-xs text-gray-400 mt-10">Sin pedidos para este día.</p>}
             {pending.map((order) => (
               <OrderCard key={order.id} order={order} nextStatus="DESIGNING" nextLabel="A Diseño →" color="bg-white border-l-4 border-l-red-400" onOpen={() => setSelectedOrder(order)} />
             ))}
@@ -52,7 +132,7 @@ export default function OrderBoard({ orders, products }: { orders: Order[], prod
           <h3 className="font-bold text-bloomly-olive mb-4 flex items-center gap-2">
             ✂️ En Mesa de Diseño <span className="bg-bloomly-olive text-white text-xs px-2 py-1 rounded-full">{designing.length}</span>
           </h3>
-          <div className="space-y-3 overflow-y-auto flex-1">
+          <div className="space-y-3 overflow-y-auto flex-1 pb-10">
             {designing.map((order) => (
               <OrderCard key={order.id} order={order} nextStatus="IN_ROUTE" nextLabel="Enviar a Ruta 🚚" color="bg-white border-l-4 border-l-bloomly-olive" onOpen={() => setSelectedOrder(order)} />
             ))}
@@ -64,7 +144,7 @@ export default function OrderBoard({ orders, products }: { orders: Order[], prod
           <h3 className="font-bold text-green-700 mb-4 flex items-center gap-2">
             🚚 Ruta / Listo <span className="bg-green-200 text-xs px-2 py-1 rounded-full">{completedOrRoute.length}</span>
           </h3>
-          <div className="space-y-3 overflow-y-auto flex-1">
+          <div className="space-y-3 overflow-y-auto flex-1 pb-10">
             {completedOrRoute.map((order) => (
               <div 
                 key={order.id} 
@@ -106,7 +186,7 @@ export default function OrderBoard({ orders, products }: { orders: Order[], prod
         </div>
       </div>
 
-      {/* MODAL DE DETALLES CON BOTÓN DE WHATSAPP DIRECTO */}
+      {/* MODAL DE DETALLES */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
@@ -122,9 +202,8 @@ export default function OrderBoard({ orders, products }: { orders: Order[], prod
                   <p className="font-black text-xl text-gray-800 leading-none">{selectedOrder.customer.name}</p>
                   <p className="text-sm text-gray-500 mb-3">{selectedOrder.customer.phone}</p>
                   
-                  {/* BOTÓN WHATSAPP DIRECTO */}
                   <a 
-                    href={`https://wa.me/52${selectedOrder.customer.phone}?text=${encodeURIComponent(`Hola ${selectedOrder.customer.name}, te contacto de la florería respecto a tu pedido #${selectedOrder.id} 🌸`)}`}
+                    href={`https://api.whatsapp.com/send?phone=52${selectedOrder.customer.phone}&text=${encodeURIComponent(`Hola ${selectedOrder.customer.name}, te contacto de la florería respecto a tu pedido #${selectedOrder.id} 🌸`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-[#20bd5a] transition-all shadow-md active:scale-95"

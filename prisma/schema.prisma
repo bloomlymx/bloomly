@@ -6,30 +6,32 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // 👇 AQUÍ ESTÁ LA MAGIA PARA QUE SUPABASE NO SE QUEDE CARGANDO
+  directUrl = env("DIRECT_URL") 
 }
 
 // 1. EL PRODUCTO (Catálogo para E-commerce)
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String   // Ej: "Ramo Buchón 50 Rosas"
-  description String?  // Descripción detallada
-  price       Float
-  imageUrl    String?  // URL de la foto
-  category    String?  // "Arreglo", "Ramo"
-  createdAt   DateTime @default(now()) // Para ordenar por "Nuevos"
+  id            Int      @id @default(autoincrement())
+  name          String   // Ej: "Ramo Buchón 50 Rosas"
+  description   String?  // Descripción detallada
+  price         Float
+  imageUrl      String?  // URL de la foto
+  category      String?  // "Arreglo", "Ramo"
+  createdAt     DateTime @default(now()) // Para ordenar por "Nuevos"
 
   discountPrice Float?     // Precio rebajado (Opcional)
   discountStart DateTime?  // Cuándo empieza la oferta
   discountEnd   DateTime?  // Cuándo termina la oferta
 
-  // 👇 NUEVO: Categoría / Ocasión
+  // Categoría / Ocasión
   occasion      String?  // Ej: "love", "birthday", "anniversary", "condolences"
    
   // Relaciones
-  batches     FlowerBatch[] // Si asignamos lotes a productos
-  items       OrderItem[]   // Relación con los pedidos
+  batches       FlowerBatch[] // Si asignamos lotes a productos
+  items         OrderItem[]   // Relación con los pedidos
 }
 
 // 2. EL LOTE DE FLORES (Control de Merma e Inventario)
@@ -39,7 +41,6 @@ model FlowerBatch {
   flowerType    String   // Ej: "Rosa Roja", "Girasol"
   quantity      Int      // Stock actual (disminuye con el uso)
   
-  // 👇 NUEVOS CAMPOS AGREGADOS PARA EL INVENTARIO INTELIGENTE
   originalQty   Int      @default(0) // Stock inicial (para calcular % de merma)
   purchasePrice Float    @default(0) // Costo del lote
   purchaseDate  DateTime @default(now()) // Fecha de entrada
@@ -47,7 +48,7 @@ model FlowerBatch {
   expiryDate    DateTime? // Opcional: El sistema calcula frescura por días
   status        String   @default("FRESH") // FRESH, RISK, WASTE
   
-  // Relaciones (Opcionales por si quieres ligarlo a un producto específico)
+  // Relaciones 
   productId     Int?      
   product       Product? @relation(fields: [productId], references: [id])
 
@@ -76,6 +77,9 @@ model Order {
   address       String?  // Dirección de entrega
   dedication    String?  // Mensaje de la tarjeta
   recipientName String?  // Quién recibe (ej: "Mamá")
+  
+  // AQUÍ ESTÁ LA OCASIÓN GUARDADA CORRECTAMENTE
+  occasion      String?  
 
   customerId    Int
   customer      Customer @relation(fields: [customerId], references: [id])
@@ -95,9 +99,9 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
 }
 
-// 👇 NUEVO MODELO: Configuración de la Tienda
+// NUEVO MODELO: Configuración de la Tienda
 model StoreSettings {
-  id          Int     @id @default(autoincrement())
-  shopName    String  @default("Mi Florería")
-  updatedAt   DateTime @updatedAt
+  id        Int     @id @default(autoincrement())
+  shopName  String  @default("Mi Florería")
+  updatedAt DateTime @updatedAt
 }
